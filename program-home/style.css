@@ -1,0 +1,50 @@
+:root { --ink:#18211f; --muted:#66716d; --line:#dce3df; --ground:#f6f7f5; --paper:#fff; --accent:#176b58; --accent-dark:#0f4d3f; --limited:#183f4d; --limited-pale:#e9f1f1; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--ground); color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif; font-size:16px; line-height:1.8; }
+.container { width:min(1080px, calc(100% - 40px)); margin:0 auto; }
+.site-header { background:var(--ink); color:#fff; padding:70px 0 64px; }
+.eyebrow,.section-label,.step,.bonus-badge,.note-label { margin:0; font-size:12px; font-weight:700; letter-spacing:.1em; line-height:1.5; }
+.eyebrow { color:#a9d2c5; }
+h1,h2,h3 { margin:0; font-weight:700; letter-spacing:.02em; line-height:1.35; }
+h1 { margin-top:12px; font-size:clamp(29px,4.4vw,46px); }
+.header-lead { margin:18px 0 0; color:#d7e1dd; font-size:17px; }
+.intro { display:flex; gap:80px; align-items:center; padding:44px 0; border-bottom:1px solid var(--line); }
+.intro > div { min-width:180px; }
+.section-label { color:var(--accent); }
+h2 { font-size:28px; margin-top:4px; }
+.intro p:last-child,.section-heading > p:last-child { margin:12px 0 0; color:var(--muted); }
+.intro p:last-child { max-width:650px; }
+.section { padding:68px 0; }
+.section-heading { margin-bottom:28px; }
+.card-grid { display:grid; gap:20px; }
+.program-grid { grid-template-columns:repeat(2,1fr); }
+.bonus-grid { grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); }
+.card { background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:30px; box-shadow:0 2px 8px rgba(23,41,34,.04); }
+.card-topline { display:flex; justify-content:space-between; gap:16px; align-items:center; }
+.step { color:var(--accent); }
+.format { border:1px solid #cad5d0; border-radius:999px; padding:3px 9px; color:var(--muted); font-size:11px; font-weight:700; letter-spacing:.06em; line-height:1.4; white-space:nowrap; }
+h3 { font-size:23px; margin-top:20px; }
+.card > p { margin:12px 0 26px; color:var(--muted); }
+.button { display:inline-flex; justify-content:center; align-items:center; min-height:48px; padding:10px 20px; border-radius:7px; background:var(--accent); color:#fff; font-weight:700; line-height:1.5; text-decoration:none; transition:background .15s ease; }
+.button:hover { background:var(--accent-dark); }
+.limited-section { background:var(--limited-pale); padding:68px 0; }
+.limited-heading .section-label { color:#276273; }
+.simulator-card { border-color:#aabfc2; background:var(--limited); color:#fff; padding:34px; }
+.simulator-content { display:flex; justify-content:space-between; gap:35px; align-items:end; }
+.bonus-badge { color:#d3ea9c; }
+.simulator-card .format { color:#d8e4e3; border-color:#537681; }
+.simulator-card h3 { font-size:27px; }
+.simulator-card p { margin:12px 0 0; color:#e2eded; }
+.button-light { flex:0 0 auto; background:#fff; color:var(--limited); }
+.button-light:hover { background:#e7f0ee; }
+.deadline-notes { display:grid; grid-template-columns:1fr 1fr; gap:0; margin-top:32px; border-top:1px solid #50717a; }
+.deadline-notes > div { padding:20px 22px 0 0; }
+.deadline-notes > div + div { padding-left:25px; border-left:1px solid #50717a; }
+.note-label { color:#b4d1d1; }
+.deadline-notes p { font-size:14px; line-height:1.7; }
+.deadline-notes span { color:#c7d7d6; font-size:13px; }
+.bonus-section { padding-bottom:82px; }
+.button-secondary { background:var(--accent); color:#fff; }
+.button-secondary:hover { background:var(--accent-dark); }
+.site-footer { border-top:1px solid var(--line); padding:22px 0; color:var(--muted); font-size:13px; }
+@media (max-width:700px) { .container { width:min(100% - 32px,1080px); } .site-header { padding:48px 0; } .intro { display:block; padding:34px 0; } .intro p:last-child { margin-top:10px; } .section,.limited-section { padding:48px 0; } .program-grid,.deadline-notes { grid-template-columns:1fr; } .card { padding:25px; } .simulator-content { display:block; } .simulator-content .button { margin-top:25px; width:100%; } .deadline-notes > div + div { margin-top:16px; padding:20px 0 0; border-left:0; border-top:1px solid #50717a; } .deadline-notes > div { padding-right:0; } }
