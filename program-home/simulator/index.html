@@ -176,8 +176,12 @@ function setup(msg){
     「終える」はいつでも選べる。早すぎても遅すぎても減点される。
   </p>`;
 }
-function pickScn(id){ sel.sc=id; setup(); }
-function pickLv(l){ sel.lv=l; setup(); }
+function keepLicenseCodeInput(){
+  const input=document.getElementById("license-code");
+  if(input) cfg.licenseCode=input.value;
+}
+function pickScn(id){ keepLicenseCodeInput(); sel.sc=id; setup(); }
+function pickLv(l){ keepLicenseCodeInput(); sel.lv=l; setup(); }
 
 async function start(){
   const licenseCode=document.getElementById("license-code").value.trim();
