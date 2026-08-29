@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>安全ライン 実戦モード</title>
+<style>
+  :root{
+    --paper:#D9DED7; --card:#F3F5F0; --ink:#19211C; --muted:#5F6A63;
+    --line:#C1C9BD; --good:#2E5C4E; --warn:#8A3D2C; --dim:#9AA398;
+    --display:"Hiragino Mincho ProN","Yu Mincho","YuMincho","MS PMincho",serif;
+    --body:"Hiragino Kaku Gothic ProN","Yu Gothic","YuGothic","Noto Sans JP",sans-serif;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:820px;margin:0 auto;padding:0 18px 60px}
+
+  header{position:sticky;top:0;z-index:10;background:var(--paper);border-bottom:1px solid var(--line);padding:12px 0 10px;margin-bottom:20px}
+  .hdr-row{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap}
+  .scn-name{font-family:var(--display);font-size:15px;letter-spacing:.04em;flex:1;min-width:140px}
+  .scn-name em{font-style:normal;color:var(--muted);font-size:11px;font-family:var(--mono);display:block;letter-spacing:.1em}
+  .meter-box{flex:2;min-width:200px}
+  .meter-lab{display:flex;justify-content:space-between;align-items:baseline;font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--muted);margin-bottom:4px}
+  .meter-val{font-size:17px;color:var(--ink);font-variant-numeric:tabular-nums}
+  .meter-val.hot{color:var(--warn)}
+  .delta{font-size:11px;margin-left:6px}
+  .delta.up{color:var(--warn)} .delta.dn{color:var(--good)}
+  .meter{height:14px;display:flex;gap:2px}
+  .seg{flex:1;background:#C8CFC5;transition:background .45s cubic-bezier(.2,.8,.3,1)}
+  .seg.on{background:var(--good)} .seg.on.hot{background:var(--warn)}
+  .ratio{font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--muted);margin-top:6px}
+  .ratio b{color:var(--ink);font-weight:400}
+
+  .log{margin-bottom:22px}
+  .line{margin-bottom:14px;animation:fade .4s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  .who{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--dim);margin-bottom:3px}
+  .bubble{background:var(--card);border-left:2px solid var(--line);padding:9px 13px}
+  .line.me .bubble{background:transparent;border-left:2px solid var(--ink)}
+  .line.cue .bubble{background:transparent;border:none;border-top:1px dashed var(--line);border-bottom:1px dashed var(--line);padding:8px 0;color:var(--muted);font-family:var(--display);font-size:14px}
+  .fb{font-size:12.5px;line-height:1.6;margin-top:6px;padding-left:13px;color:var(--muted)}
+  .fb.g{color:var(--good)} .fb.b{color:var(--warn)}
+  .fb .card-tag{font-family:var(--mono);font-size:10px;letter-spacing:.1em;border:1px solid currentColor;padding:0 4px;margin-right:6px}
+  .fb .mis{font-family:var(--mono);font-size:10px;letter-spacing:.06em;color:var(--warn);border:1px solid var(--warn);padding:0 4px;margin-right:6px}
+
+  .prompt{font-family:var(--display);font-size:14px;color:var(--muted);margin:0 0 10px;letter-spacing:.03em}
+  .cards{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+  .cbtn{flex:1;min-width:78px;background:var(--card);border:1px solid var(--line);padding:8px 6px;cursor:pointer;font-family:inherit;color:var(--ink);text-align:center;line-height:1.35}
+  .cbtn b{display:block;font-family:var(--mono);font-size:12px;letter-spacing:.08em;color:var(--muted)}
+  .cbtn span{font-size:12.5px}
+  .cbtn.sel{border-color:var(--ink);background:#E6EAE1}
+  .cbtn.sel b{color:var(--ink)}
+  .cbtn:disabled{opacity:.4;cursor:not-allowed}
+  textarea{width:100%;background:var(--card);border:1px solid var(--line);padding:11px 13px;font-family:inherit;font-size:15px;line-height:1.6;color:var(--ink);resize:vertical;min-height:72px}
+  textarea:focus{outline:none;border-color:var(--ink)}
+  .cnt{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;color:var(--muted);text-align:right;margin-top:3px}
+  .cnt.over{color:var(--warn)}
+
+  .row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px}
+  .btn{background:var(--ink);border:1px solid var(--ink);color:var(--paper);font-family:var(--body);font-size:13.5px;padding:9px 22px;cursor:pointer;letter-spacing:.06em}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .btn.ghost{background:transparent;color:var(--ink)}
+  .btn.ghost:hover{background:var(--ink);color:var(--paper)}
+  .note{font-size:11.5px;color:var(--muted);font-family:var(--mono);letter-spacing:.06em}
+  .err{color:var(--warn);font-size:13px;margin-top:10px}
+
+  h1{font-family:var(--display);font-size:26px;font-weight:400;letter-spacing:.06em;margin:34px 0 4px}
+  .sub{color:var(--muted);font-size:13px;margin-bottom:24px}
+  label{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.16em;color:var(--muted);margin:20px 0 5px}
+  input[type=text]{width:100%;background:var(--card);border:1px solid var(--line);padding:10px 12px;font-family:var(--mono);font-size:13px;color:var(--ink)}
+  input[type=text]:focus{outline:none;border-color:var(--ink)}
+  .pick{display:block;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);padding:13px 15px;margin-bottom:8px;cursor:pointer;font-family:inherit;color:var(--ink)}
+  .pick:hover{border-color:var(--ink)}
+  .pick.sel{border-color:var(--ink);background:#E6EAE1}
+  .pick .t{font-family:var(--display);font-size:16px;letter-spacing:.04em}
+  .pick .d{font-size:12.5px;color:var(--muted);margin-top:2px}
+  .lvrow{display:flex;gap:8px}
+  .lvrow .pick{flex:1;text-align:center}
+
+  .axis{margin-bottom:15px}
+  .axis-h{display:flex;justify-content:space-between;align-items:baseline;font-size:13.5px;margin-bottom:4px}
+  .axis-h span:last-child{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:13px}
+  .axis-bar{height:6px;background:#C8CFC5}
+  .axis-fill{height:100%;background:var(--good);transition:width .8s cubic-bezier(.2,.8,.3,1)}
+  .axis-fill.low{background:var(--warn)}
+  .axis-note{font-size:12px;color:var(--muted);margin-top:4px}
+  .verdict{background:var(--card);border-left:2px solid var(--ink);padding:14px 16px;margin:20px 0;font-size:14px}
+  .verdict b{font-family:var(--display);font-weight:400;font-size:16px;letter-spacing:.04em}
+  hr{border:none;border-top:1px solid var(--line);margin:26px 0}
+  .small{font-size:12px;color:var(--muted)}
+  .load{font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--muted);padding:10px 0}
+  @media(max-width:560px){.hdr-row{gap:8px}.meter-box{flex:1 0 100%}.scn-name{flex:1 0 100%}h1{font-size:22px}}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+
+<script>
+/* ============================================================
+   安全ライン 実戦モード
+   選択式ではなく、自分でセリフを書く。相手役と講評は DeepSeek API。
+   採点は原則ローカル（JS）で行い、AI の判定はフラグとしてのみ使う。
+   ============================================================ */
+
+/* localStorage が使えない環境（プレビュー等）でも動くようにする */
+const store = (()=>{
+  try{ localStorage.setItem("__t","1"); localStorage.removeItem("__t"); return localStorage; }
+  catch(e){ const m={}; return {getItem:k=>m[k]??null, setItem:(k,v)=>{m[k]=String(v)}, removeItem:k=>{delete m[k]}}; }
+})();
+
+const SCEN = [
+  {id:"w1", t:"職場・休憩スペース",     d:"面識は挨拶程度。短い雑談として成立させる"},
+  {id:"w2", t:"職場・反応が薄い日",     d:"相手は忙しい。沈黙が多い。置くと起点が要る"},
+  {id:"h1", t:"趣味の場・片付けのとき", d:"共通の体験がある場。次に会う機会は確実にある"},
+  {id:"d1", t:"初回デート・カフェ",     d:"会って2回目。90分。開示の階層が問われる"},
+  {id:"d2", t:"2回目・居酒屋",          d:"相手が悩みを打ち明けてくる。解決策の罠"},
+  {id:"s1", t:"職場・相談されている",   d:"相談役に固定されるかどうかの分岐"}
+];
+
+const CARDS = [
+  {k:"S", n:"振る",  h:"起点。場から拾う／既出に戻す"},
+  {k:"A", n:"掘る",  h:"質問を1つ。評価層で"},
+  {k:"B", n:"映す",  h:"言い換えて返す。質問しない"},
+  {k:"C", n:"出す",  h:"自分の話を短く。80字以内"},
+  {k:"D", n:"置く",  h:"何も足さない。期待しない"},
+  {k:"E", n:"終える",h:"自分から会話を終える"}
+];
+
+const AXES=[
+  {k:"t",n:"2-1 ターン運用",d:"宣言した手札と、実際の発話が一致しているか"},
+  {k:"u",n:"2-2 支持応答",  d:"主語を相手に置けているか。話題を奪っていないか"},
+  {k:"d",n:"2-3 開示階層",  d:"相手のレベル±1に収まっているか"},
+  {k:"l",n:"2-4 負荷管理",  d:"圧・追撃・境界侵犯をしていないか"}
+];
+
+const WORKER_URL="https://anzen-jissen.tk-suga3.workers.dev";
+let S=null, cfg={licenseCode:store.getItem("licenseCode")||"", cid:store.getItem("cid")||""};
+if(!cfg.cid){ cfg.cid = "c-"+Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2); store.setItem("cid",cfg.cid); }
+const app=document.getElementById("app");
+const esc=s=>String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+
+/* ---------------- 設定画面 ---------------- */
+let sel={sc:null, lv:1};
+function setup(msg){
+  S=null;
+  app.innerHTML=`
+  <h1>安全ライン 実戦モード</h1>
+  <p class="sub">選択肢はない。毎ターン、手札を1枚宣言して、自分でセリフを書く。<br>
+  宣言した手札と実際の発話がずれていれば、それも減点される。</p>
+
+  <label>認証コード</label>
+  <input type="text" id="license-code" value="${esc(cfg.licenseCode)}" placeholder="例：TEST-30DAY-001" autocomplete="off">
+  <p class="small">初回認証後は、このブラウザに保存されます。</p>
+
+  <label>SCENARIO</label>
+  ${SCEN.map(s=>`<button class="pick ${sel.sc===s.id?'sel':''}" onclick="pickScn('${s.id}')">
+     <div class="t">${s.t}</div><div class="d">${s.d}</div></button>`).join("")}
+
+  <label>DIFFICULTY</label>
+  <div class="lvrow">
+    ${[1,2,3].map(l=>`<button class="pick ${sel.lv===l?'sel':''}" onclick="pickLv(${l})">
+      <div class="t">LV ${l}</div></button>`).join("")}
+  </div>
+
+  <div class="row" style="margin-top:22px">
+    <button class="btn" id="go" onclick="start()">開始</button>
+    <span class="note">1セッション最大10ターン</span>
+  </div>
+  ${msg?`<div class="err">${esc(msg)}</div>`:""}
+  <hr>
+  <p class="small">
+    手札　<b>S</b> 振る／<b>A</b> 掘る／<b>B</b> 映す／<b>C</b> 出す／<b>D</b> 置く／<b>E</b> 終える<br>
+    「終える」はいつでも選べる。早すぎても遅すぎても減点される。
+  </p>`;
+}
+function pickScn(id){ sel.sc=id; setup(); }
+function pickLv(l){ sel.lv=l; setup(); }
+
+async function start(){
+  const licenseCode=document.getElementById("license-code").value.trim();
+  if(!licenseCode) return setup("認証コードを入力してください。");
+  if(!sel.sc) return setup("シナリオを選んでください。");
+  document.getElementById("go").disabled=true;
+  app.insertAdjacentHTML("beforeend",`<div class="load" id="ld">接続しています…</div>`);
+  let r;
+  try{
+    r=await fetch(WORKER_URL+"/start",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({cid:cfg.cid,license_code:licenseCode,scenario:sel.sc})});
+  }catch(e){ return setup("Worker に接続できませんでした。通信設定を確認してください。"); }
+  const d=await r.json().catch(()=>({error:"bad response"}));
+  if(!r.ok){
+    if(d.error==="daily_limit") return setup(`本日の上限に達しました（${d.used}/${d.limit}）。ドリルモードで練習してください。`);
+    if(d.error==="invalid_license_code") return setup("認証コードを確認してください。");
+    if(d.error==="activation_deadline_passed") return setup("認証コードの初回有効化期限が過ぎています。");
+    if(d.error==="license_expired") return setup("この認証コードの利用期限が過ぎています。");
+    if(d.error==="license_revoked") return setup("この認証コードは利用できません。");
+    return setup("開始できませんでした： "+(d.error||r.status));
+  }
+  cfg.licenseCode=licenseCode; store.setItem("licenseCode",cfg.licenseCode);
+  S={ sc:sel.sc, lv:sel.lv, title:d.title, maxTurns:d.maxTurns, closeWin:d.closeWin,
+      turn:1, load:16+sel.lv*6, delta:0, history:[], log:[],
+      cards:{S:0,A:0,B:0,C:0,D:0,E:0}, earn:{t:0,u:0,d:0,l:0}, max:{t:0,u:0,d:0,l:0},
+      pick:null, closedAt:null, bail:false, busy:false, lastCut:false };
+  S.log.push({cue:d.opening});
+  S.history.push({role:"npc", text:d.opening});
+  render();
+}
+
+/* ---------------- 採点（ローカル） ---------------- */
+function scoreTurn(intent, r){
+  const f=r.flags, m=r.metrics;
+  const qs=Math.max(f.questions, m.qmarks);
+  const long = f.too_long || m.chars>90;
+  const mismatch = (r.actual_card!==intent) && intent!=="E";
+
+  // 2-1 ターン運用
+  let t=2;
+  if(mismatch) t-=1;
+  if(f.two_moves) t-=1;
+  if(qs>=2) t-=1;
+  if(long) t-=1;
+
+  // 2-2 支持応答
+  let u=2;
+  if(f.shift) u-=2;
+  if(f.solution) u-=1;
+  if(intent==="C" && long) u-=1;
+
+  // 2-3 開示階層
+  const gap=r.user_lv - r.npc_lv;
+  let d=2;
+  if(gap>=2) d-= (gap>=3?2:1);
+  if(gap<=-2 && r.npc_lv>=2) d-=1;   // 壁になっている側の失点
+
+  // 2-4 負荷管理
+  let l=2;
+  if(f.chase) l-=2;
+  if(f.boundary) l-=2;
+  if(f.silence_fill) l-=1;
+  if(r.load_delta>=15) l-=1;
+  if(S.lastCut && intent!=="E") l-=2;  // 終わりの合図を無視した
+
+  const cl=v=>Math.max(0,Math.min(2,v));
+  return {t:cl(t),u:cl(u),d:cl(d),l:cl(l),mismatch,qs,long};
+}
+
+/* ---------------- 送信 ---------------- */
+async function send(){
+  if(S.busy) return;
+  const ta=document.getElementById("say");
+  const text = S.pick==="D" ? "" : (ta?ta.value.trim():"");
+  if(S.pick!=="D" && !text) return;
+  S.busy=true; render();
+
+  let r;
+  try{
+    const res=await fetch(WORKER_URL+"/turn",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({cid:cfg.cid,license_code:cfg.licenseCode,scenario:S.sc,lv:S.lv,turn:S.turn,card:S.pick,text,history:S.history})});
+    r=await res.json();
+    if(!res.ok){ S.busy=false; S.err=(r.error==="too_fast")?"少し間を空けてください。":"通信エラー： "+(r.error||res.status); return render(); }
+  }catch(e){ S.busy=false; S.err="Worker に接続できませんでした。"; return render(); }
+
+  const sc=scoreTurn(S.pick,r);
+  for(const a of ["t","u","d","l"]){ S.max[a]+=2; S.earn[a]+=sc[a]; }
+  S.cards[S.pick]=(S.cards[S.pick]||0)+1;
+
+  const before=S.load;
+  S.load=Math.max(0,Math.min(100,S.load+r.load_delta));
+  S.delta=S.load-before;
+
+  S.log.push({me: text||"（何も言わない）", k:S.pick, actual:r.actual_card,
+              mismatch:sc.mismatch, fb:r.note, g:(r.verdict==="good"?1:r.verdict==="bad"?-1:0),
+              lv:r.user_lv});
+  S.history.push({role:"me", text: text||"（無言）"});
+  if(r.npc_reply){ S.log.push({npc:r.npc_reply}); S.history.push({role:"npc", text:r.npc_reply}); }
+
+  S.lastCut=!!r.cut;
+  S.busy=false; S.err=null; S.pick=null;
+
+  if(S.log[S.log.length-1] && String(S.log[S.log.length-2]?.k)==="E"){ S.closedAt=S.turn; return finish(); }
+  if(S.load>=88){ S.bail=true; S.closedAt=S.turn; return finish(); }
+  S.turn++;
+  if(S.turn>S.maxTurns) return finish();
+  render();
+}
+
+function endNow(){
+  S.closedAt=S.turn;
+  S.log.push({me:"（自分から会話を終えた）",k:"E",fb:"",g:0});
+  finish();
+}
+
+/* ---------------- 描画 ---------------- */
+function render(){
+  const segs=Array.from({length:20},(_,i)=>{
+    const on=(i+1)*5<=S.load;
+    return `<div class="seg ${on?'on':''} ${on&&S.load>=65?'hot':''}"></div>`;
+  }).join("");
+  const dt=S.delta?(S.delta>0?`+${S.delta}`:`${S.delta}`):"";
+
+  app.innerHTML=`
+  <header>
+    <div class="hdr-row">
+      <div class="scn-name"><em>実戦 / LV${S.lv}</em>${esc(S.title)}</div>
+      <div class="meter-box">
+        <div class="meter-lab"><span>相手の負荷</span>
+          <span class="meter-val ${S.load>=65?'hot':''}">${String(S.load).padStart(2,"0")}
+            <span class="delta ${S.delta>0?'up':'dn'}">${dt}</span></span></div>
+        <div class="meter">${segs}</div>
+        <div class="ratio">手札　A <b>${S.cards.A}</b>　B <b>${S.cards.B}</b>　C <b>${S.cards.C}</b>　S <b>${S.cards.S}</b>　D <b>${S.cards.D}</b>　　ターン <b>${S.turn}</b>/${S.maxTurns}</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="log">${S.log.map(renderLine).join("")}</div>
+
+  ${S.busy ? `<div class="load">相手の反応を待っています…</div>` : `
+  <p class="prompt">手札を1枚宣言してから、セリフを書く</p>
+  <div class="cards">
+    ${CARDS.map(c=>`<button class="cbtn ${S.pick===c.k?'sel':''}" onclick="setPick('${c.k}')">
+      <b>${c.k}</b><span>${c.n}</span></button>`).join("")}
+  </div>
+  ${S.pick?`<p class="small" style="margin:-4px 0 8px">${esc(CARDS.find(c=>c.k===S.pick).h)}</p>`:""}
+  ${S.pick==="D"
+    ? `<p class="small">何も言わずに、そのままにしておく。</p>`
+    : `<textarea id="say" placeholder="${S.pick?'ここにセリフを書く':'先に手札を選ぶ'}" ${S.pick?"":"disabled"} oninput="cnt()"></textarea>
+       <div class="cnt" id="cn">0 字</div>`}
+  <div class="row">
+    <button class="btn" onclick="send()" ${S.pick?"":"disabled"}>${S.pick==="D"?"置く":"送る"}</button>
+    <button class="btn ghost" onclick="endNow()">会話を終える</button>
+  </div>
+  ${S.err?`<div class="err">${esc(S.err)}</div>`:""}`}
+  `;
+  const ta=document.getElementById("say"); if(ta) ta.focus();
+  window.scrollTo({top:document.body.scrollHeight,behavior:"smooth"});
+}
+function setPick(k){ S.pick=k; S.err=null; render(); }
+function cnt(){
+  const ta=document.getElementById("say"), el=document.getElementById("cn");
+  if(!ta||!el) return;
+  const n=[...ta.value].length;
+  el.textContent=n+" 字"+(n>90?"　長い":"");
+  el.className="cnt"+(n>90?" over":"");
+}
+function renderLine(l){
+  if(l.cue) return `<div class="line cue"><div class="bubble">${esc(l.cue)}</div></div>`;
+  if(l.npc) return `<div class="line"><div class="who">相手</div><div class="bubble">${esc(l.npc)}</div></div>`;
+  const tag = l.mismatch
+    ? `<span class="mis">${l.k}→${l.actual}</span>`
+    : `<span class="card-tag">${l.k}</span>`;
+  return `<div class="line me"><div class="who">自分</div><div class="bubble">${esc(l.me)}</div>
+    ${l.fb?`<div class="fb ${l.g>0?'g':l.g<0?'b':''}">${tag}${esc(l.fb)}</div>`:""}</div>`;
+}
+
+/* ---------------- 結果 ---------------- */
+function closeScore(){
+  const [a,b]=S.closeWin, c=S.closedAt;
+  if(c===null) return [0,"終了の主導権を持てなかった。会話全体の印象は終端に規定される。"];
+  if(c<a) return [55,`ターン${c}で終了。早すぎる。相手が開く前に切っている。`];
+  if(c<=b) return [100,`ターン${c}で終了。適切。まだ話せる状態で、自分から切れている。`];
+  if(c<=b+2) return [60,`ターン${c}で終了。やや粘っている。話題が枯れてから終えると間延びする。`];
+  return [20,`ターン${c}で終了。粘りすぎ。`];
+}
+function finish(){
+  const pct=k=>S.max[k]?Math.round(S.earn[k]/S.max[k]*100):100;
+  const [cs,cnote]=closeScore();
+  const scores=AXES.map(a=>({...a,v:pct(a.k)})).concat([{n:"2-5 終了設計",d:"",v:cs,note:cnote}]);
+  const avg=Math.round(scores.reduce((s,x)=>s+x.v,0)/scores.length);
+  const tot=S.cards.A+S.cards.B+S.cards.C;
+  const cR=tot?Math.round(S.cards.C/tot*100):0;
+  const mis=S.log.filter(l=>l.mismatch).length;
+
+  let v;
+  if(S.bail) v=`<b>相手が離脱した</b><br>負荷が上限に達した。会話を続けることより、警戒を上げないことが優先される段階。`;
+  else if(avg>=85) v=`<b>安全ライン通過圏</b><br>負荷を上げずに運用し、自分から終えられている。複数の相手・場面で再現できるかが次の課題。`;
+  else if(avg>=65) v=`<b>通過手前</b><br>大枠は運用できているが、特定の軸で落ちている。最も低い軸だけを次の1週間の課題にする。`;
+  else v=`<b>未通過</b><br>複数の軸で負荷を発生させている。最も低い軸ひとつに絞る。全部同時に直そうとすると定着しない。`;
+
+  app.innerHTML=`
+  <h1>結果</h1>
+  <p class="sub">${esc(S.title)}　LV${S.lv}　最終負荷 ${S.load}</p>
+  <div class="verdict">${v}</div>
+  ${scores.map(s=>`
+    <div class="axis">
+      <div class="axis-h"><span>${s.n}</span><span>${s.v}</span></div>
+      <div class="axis-bar"><div class="axis-fill ${s.v<60?'low':''}" style="width:${s.v}%"></div></div>
+      <div class="axis-note">${s.note||s.d}</div>
+    </div>`).join("")}
+  <div class="axis">
+    <div class="axis-h"><span>手札 C（自分の話）比率</span><span>${cR}%</span></div>
+    <div class="axis-bar"><div class="axis-fill ${cR>35?'low':''}" style="width:${Math.min(100,cR*2)}%"></div></div>
+    <div class="axis-note">目安 25%前後。A ${S.cards.A} / B ${S.cards.B} / C ${S.cards.C} / S ${S.cards.S} / D ${S.cards.D}</div>
+  </div>
+  <div class="axis">
+    <div class="axis-h"><span>宣言と実際のズレ</span><span>${mis}</span></div>
+    <div class="axis-note">${mis===0?"宣言した手札どおりに発話できている。":"選んだつもりの手と、実際に出た手が違っている。ドリルモードで手札の定義を確認する。"}</div>
+  </div>
+  <hr>
+  <h1 style="font-size:19px;margin-top:0">ログ</h1>
+  <div class="log">${S.log.map(renderLine).join("")}</div>
+  <hr>
+  <button class="btn ghost" onclick="setup()">シナリオを選び直す</button>`;
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+setup();
+</script>
+</body>
+</html>
